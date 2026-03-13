@@ -913,6 +913,7 @@
         <div class="sel-header">
           <span class="sel-title" id="sel-title">Selected</span>
           <span class="sel-count" id="sel-count"></span>
+          <button onclick="clearFiles()" style="margin-left:auto;background:none;border:1px solid var(--danger);color:var(--danger);border-radius:6px;padding:2px 10px;cursor:pointer;font-size:12px;">✕ Clear</button>
         </div>
         <div class="sel-list" id="sel-list"></div>
         <div class="sel-total">
@@ -1136,8 +1137,16 @@
     }
 
     function onFileChange(e) {
-      const files = Array.from(e.target.files).map(f => ({ file: f, path: f.name }));
-      if (files.length) { selectedFiles = files; showSelected(); }
+      const newFiles = Array.from(e.target.files).map(f => ({ file: f, path: f.name }));
+      if (newFiles.length) {
+        const existing = selectedFiles.isLazy ? [] : (selectedFiles || []);
+        const existingKeys = new Set(existing.map(f => f.file.name + f.file.size));
+        const unique = newFiles.filter(f => !existingKeys.has(f.file.name + f.file.size));
+        selectedFiles = [...existing, ...unique];
+        // Reset input so same files can be re-added after clearing
+        e.target.value = '';
+        showSelected();
+      }
     }
     function onFolderChange(e) {
       // Store raw FileList reference — don't Array.from() large lists upfront
