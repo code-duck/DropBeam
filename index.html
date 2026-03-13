@@ -903,7 +903,7 @@
         ondrop="onDrop(event)">
         <span class="dz-icon" id="dz-icon">📦</span>
         <div class="dz-title" id="dz-title">Drop your file here</div>
-        <div class="dz-sub" id="dz-sub">or click to browse — any format, any size, multi-select supported</div>
+        <div class="dz-sub" id="dz-sub">drop files one by one or all at once — they keep adding up!</div>
       </div>
       <input type="file" id="file-input" multiple onchange="onFileChange(event)" />
       <input type="file" id="folder-input" webkitdirectory multiple onchange="onFolderChange(event)" />
@@ -1058,7 +1058,7 @@
       if (m === 'file') {
         document.getElementById('dz-icon').textContent = '📄';
         document.getElementById('dz-title').textContent = 'Drop your file here';
-        document.getElementById('dz-sub').textContent = 'or click to browse — any format, any size, multi-select supported';
+        document.getElementById('dz-sub').textContent = 'drop files one by one or all at once — they keep adding up!';
       } else {
         document.getElementById('dz-icon').textContent = '📁';
         document.getElementById('dz-title').textContent = 'Drop your folder here';
@@ -1096,8 +1096,15 @@
         });
       } else {
         setMode('file');
-        const files = Array.from(e.dataTransfer.files).map(f => ({ file: f, path: f.name }));
-        if (files.length) { selectedFiles = files; showSelected(); }
+        const newFiles = Array.from(e.dataTransfer.files).map(f => ({ file: f, path: f.name }));
+        if (newFiles.length) {
+          // Accumulate — add to existing list, avoid duplicates by name+size
+          const existing = selectedFiles.isLazy ? [] : (selectedFiles || []);
+          const existingKeys = new Set(existing.map(f => f.file.name + f.file.size));
+          const unique = newFiles.filter(f => !existingKeys.has(f.file.name + f.file.size));
+          selectedFiles = [...existing, ...unique];
+          showSelected();
+        }
       }
     }
 
