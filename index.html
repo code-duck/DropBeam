@@ -603,6 +603,25 @@
       color: var(--a1);
     }
 
+    .btn-danger {
+      background: transparent;
+      border: 2px solid #ff4455;
+      color: #ff4455;
+      border-radius: 12px;
+      padding: 14px 24px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      width: 100%;
+      margin-top: 10px;
+      font-family: var(--sans);
+    }
+    .btn-danger:hover {
+      background: #ff4455;
+      color: white;
+    }
+
     /* ── PROGRESS ── */
     .prog-wrap {
       display: none;
@@ -1006,6 +1025,9 @@
       <button class="btn btn-main" id="send-btn" onclick="initSender()" disabled>
         Generate Share Link
       </button>
+      <button class="btn btn-danger" id="cancel-btn" onclick="cancelSend()" style="display:none;">
+        ✕ Cancel
+      </button>
 
       <!-- Progress -->
       <div class="prog-wrap" id="send-prog">
@@ -1353,6 +1375,7 @@
       if (!sfLen) return;
       document.getElementById('send-btn').disabled = true;
       document.getElementById('send-btn').innerHTML = '<span class="spin"></span>Generating key...';
+      document.getElementById('cancel-btn').style.display = 'block';
       setSendStatus('Generating AES-256 key...', 'info');
 
       await genKey(); // instant
@@ -1599,8 +1622,23 @@
       document.getElementById('send-speed').textContent = '0 B/s';
       document.getElementById('qrcode').innerHTML = '';
       document.getElementById('share-link').value = '';
+      document.getElementById('cancel-btn').style.display = 'none';
       setSendStatus('', '');
       setMode('file');
+    }
+
+    function cancelSend() {
+      if (peer) { peer.destroy(); peer = null; }
+      conn = null;
+      document.getElementById('cancel-btn').style.display = 'none';
+      document.getElementById('send-btn').disabled = false;
+      document.getElementById('send-btn').textContent = 'Generate Share Link';
+      document.getElementById('share-box').classList.remove('show');
+      document.getElementById('send-prog').classList.remove('show');
+      document.getElementById('qrcode').innerHTML = '';
+      document.getElementById('share-link').value = '';
+      setSendStatus('Cancelled.', 'err');
+      setTimeout(() => setSendStatus('Ready. Click "Generate Share Link" to proceed.', 'info'), 2000);
     }
 
     // ══════════════════════════════════════════════
