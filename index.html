@@ -903,9 +903,9 @@
         ondrop="onDrop(event)">
         <span class="dz-icon" id="dz-icon">📦</span>
         <div class="dz-title" id="dz-title">Drop your file here</div>
-        <div class="dz-sub" id="dz-sub">or click to browse — any file, any size</div>
+        <div class="dz-sub" id="dz-sub">or click to browse — any format, any size, multi-select supported</div>
       </div>
-      <input type="file" id="file-input" onchange="onFileChange(event)" />
+      <input type="file" id="file-input" multiple onchange="onFileChange(event)" />
       <input type="file" id="folder-input" webkitdirectory multiple onchange="onFolderChange(event)" />
 
       <!-- Selected items list -->
@@ -1058,7 +1058,7 @@
       if (m === 'file') {
         document.getElementById('dz-icon').textContent = '📄';
         document.getElementById('dz-title').textContent = 'Drop your file here';
-        document.getElementById('dz-sub').textContent = 'or click to browse — any format, any size';
+        document.getElementById('dz-sub').textContent = 'or click to browse — any format, any size, multi-select supported';
       } else {
         document.getElementById('dz-icon').textContent = '📁';
         document.getElementById('dz-title').textContent = 'Drop your folder here';
@@ -1096,8 +1096,8 @@
         });
       } else {
         setMode('file');
-        const f = e.dataTransfer.files[0];
-        if (f) { selectedFiles = [{ file: f, path: f.name }]; showSelected(); }
+        const files = Array.from(e.dataTransfer.files).map(f => ({ file: f, path: f.name }));
+        if (files.length) { selectedFiles = files; showSelected(); }
       }
     }
 
@@ -1129,8 +1129,8 @@
     }
 
     function onFileChange(e) {
-      const f = e.target.files[0];
-      if (f) { selectedFiles = [{ file: f, path: f.name }]; showSelected(); }
+      const files = Array.from(e.target.files).map(f => ({ file: f, path: f.name }));
+      if (files.length) { selectedFiles = files; showSelected(); }
     }
     function onFolderChange(e) {
       // Store raw FileList reference — don't Array.from() large lists upfront
