@@ -440,6 +440,20 @@
       color: var(--muted2);
       flex-shrink: 0;
     }
+    .sel-item-remove {
+      background: none;
+      border: none;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 14px;
+      padding: 0 4px;
+      flex-shrink: 0;
+      line-height: 1;
+      transition: color 0.15s;
+    }
+    .sel-item-remove:hover {
+      color: var(--danger);
+    }
 
     .sel-total {
       padding: 10px 16px;
@@ -1163,7 +1177,10 @@
     }
 
     function showSelected() {
-      if (!selectedFiles.length) return;
+      if (!selectedFiles.length) {
+        clearFiles();
+        return;
+      }
       const box = document.getElementById('selected-info');
       box.classList.add('show');
       const total = selectedFiles.reduce((s, f) => s + f.file.size, 0);
@@ -1175,22 +1192,23 @@
 
       const list = document.getElementById('sel-list');
       list.innerHTML = '';
-      selectedFiles.slice(0, 50).forEach(({ file, path }) => {
+      selectedFiles.slice(0, 100).forEach(({ file, path }, i) => {
         const row = document.createElement('div');
         row.className = 'sel-item';
         row.innerHTML = `
-      <span class="sel-item-icon">${fileIcon(file.name)}</span>
-      <span class="sel-item-name">${path}</span>
-      <span class="sel-item-size">${fmtBytes(file.size)}</span>`;
+          <span class="sel-item-icon">${fileIcon(file.name)}</span>
+          <span class="sel-item-name">${path}</span>
+          <span class="sel-item-size">${fmtBytes(file.size)}</span>
+          <button class="sel-item-remove" onclick="removeFile(${i})" title="Remove">−</button>`;
         list.appendChild(row);
       });
-      if (selectedFiles.length > 50) {
+      if (selectedFiles.length > 100) {
         const more = document.createElement('div');
         more.className = 'sel-item';
         more.style.color = 'var(--muted2)';
         more.style.fontFamily = 'var(--mono)';
         more.style.fontSize = '11px';
-        more.textContent = `... and ${selectedFiles.length - 50} more files`;
+        more.textContent = `... and ${selectedFiles.length - 100} more files`;
         list.appendChild(more);
       }
 
