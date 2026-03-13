@@ -1133,12 +1133,17 @@
       if (f) { selectedFiles = [{ file: f, path: f.name }]; showSelected(); }
     }
     function onFolderChange(e) {
-      const files = Array.from(e.target.files).map(f => ({
-        file: f,
-        path: f.webkitRelativePath || f.name
-      }));
-      selectedFiles = files;
-      showSelected();
+      // Store raw FileList reference — don't Array.from() large lists upfront
+      const rawFiles = e.target.files;
+      const count = rawFiles.length;
+      let totalSize = 0;
+      // Sample first 1000 files for size estimate, then extrapolate
+      const sampleCount = Math.min(count, 1000);
+      for (let i = 0; i < sampleCount; i++) totalSize += rawFiles[i].size;
+      if (count > sampleCount) totalSize = Math.round(totalSize / sampleCount * count);
+      // Build lazy selectedFiles — only store references
+      selectedFiles = { raw: rawFiles, count, totalSize, isLazy: true };
+      showSelectedLazy(count, totalSize, rawFiles[0]);
     }
 
     function showSelected() {
@@ -1172,6 +1177,38 @@
         more.textContent = `... and ${selectedFiles.length - 50} more files`;
         list.appendChild(more);
       }
+
+      document.getElementById('send-btn').disabled = false;
+      setSendStatus('Ready. Click "Generate Share Link" to proceed.', 'info');
+    }
+
+    function showSelectedLazy(count, totalSize, firstFile) {
+      const box = document.getElementById('selected-info');
+      box.classList.add('show');
+      document.getElementById('sel-title').textContent = '📁 Folder contents';
+      document.getElementById('sel-count').textContent = count.toLocaleString() + ' files';
+      document.getElementById('sel-total-size').textContent = fmtBytes(totalSize) + (count > 1000 ? ' (est.)' : '');
+
+      const list = document.getElementById('sel-list');
+      list.innerHTML = '';
+      // Only show first file as preview
+      if (firstFile) {
+        const row = document.createElement('div');
+        row.className = 'sel-item';
+        const path = firstFile.webkitRelativePath || firstFile.name;
+        row.innerHTML = `
+          <span class="sel-item-icon">${fileIcon(firstFile.name)}</span>
+          <span class="sel-item-name">${path}</span>
+          <span class="sel-item-size">${fmtBytes(firstFile.size)}</span>`;
+        list.appendChild(row);
+      }
+      const more = document.createElement('div');
+      more.className = 'sel-item';
+      more.style.color = 'var(--muted2)';
+      more.style.fontFamily = 'var(--mono)';
+      more.style.fontSize = '11px';
+      more.textContent = `... and ${(count - 1).toLocaleString()} more files`;
+      list.appendChild(more);
 
       document.getElementById('send-btn').disabled = false;
       setSendStatus('Ready. Click "Generate Share Link" to proceed.', 'info');
@@ -1275,27 +1312,46 @@
     //  SENDER — transfer
     // ══════════════════════════════════════════════
     async function startSend() {
-      const files = selectedFiles;
-      const totalBytes = files.reduce((s, f) => s + f.file.size, 0);
+      // Handle both normal array and lazy FileList
+      const isLazy = selectedFiles.isLazy;
+      const rawFiles = isLazy ? selectedFiles.raw : null;
+      const fileCount = isLazy ? selectedFiles.count : selectedFiles.length;
       const isFolder = mode === 'folder';
+
+      // Calculate real total for lazy (scan all sizes in background)
+      let totalBytes = 0;
+      if (isLazy) {
+        setSendStatus('Scanning folder size...', 'info');
+        for (let i = 0; i < rawFiles.length; i++) totalBytes += rawFiles[i].size;
+      } else {
+        totalBytes = selectedFiles.reduce((s, f) => s + f.file.size, 0);
+      }
+
+      const folderName = isLazy
+        ? (rawFiles[0].webkitRelativePath.split('/')[0] || 'folder')
+        : (isFolder ? (selectedFiles[0].path.split('/')[0] || 'folder') : null);
 
       // Session metadata
       conn.send(JSON.stringify({
         type: 'session',
         isFolder,
-        totalFiles: files.length,
+        totalFiles: fileCount,
         totalBytes,
-        folderName: isFolder ? (files[0].path.split('/')[0] || 'folder') : null
+        folderName
       }));
 
-      showSendProg(files, totalBytes);
+      showSendProgLazy(fileCount, totalBytes);
       xferStart = Date.now(); speedLast = Date.now(); speedBytes = 0; speedPrev = 0;
 
       let globalSent = 0;
 
-      for (let i = 0; i < files.length; i++) {
-        const { file, path } = files[i];
-        markFileStatus(i, 'active');
+      for (let i = 0; i < fileCount; i++) {
+        const file = isLazy ? rawFiles[i] : selectedFiles[i].file;
+        const path = isLazy
+          ? (rawFiles[i].webkitRelativePath || rawFiles[i].name)
+          : selectedFiles[i].path;
+
+        updateCurrentFileName(path);
 
         // File header
         conn.send(JSON.stringify({ type: 'file', index: i, name: file.name, path, size: file.size }));
@@ -1315,7 +1371,7 @@
 
         // File done
         conn.send(JSON.stringify({ type: 'file_done', index: i }));
-        markFileStatus(i, 'done');
+        markFileStatusById('current-file', 'done', path);
       }
 
       // Session done
@@ -1328,7 +1384,9 @@
       document.getElementById('send-total-bytes').textContent = fmtBytes(total);
       const list = document.getElementById('send-file-list');
       list.innerHTML = '';
-      files.forEach(({ file, path }, i) => {
+      // Only render up to 20 file rows to avoid freezing
+      const preview = files.slice(0, 20);
+      preview.forEach(({ file, path }, i) => {
         const row = document.createElement('div');
         row.className = 'prog-file-row';
         row.id = 'sf-' + i;
@@ -1339,13 +1397,53 @@
       });
     }
 
+    function showSendProgLazy(count, total) {
+      document.getElementById('send-prog').classList.add('show');
+      document.getElementById('send-total-bytes').textContent = fmtBytes(total);
+      const list = document.getElementById('send-file-list');
+      list.innerHTML = '';
+      // Single row showing current file being sent
+      const row = document.createElement('div');
+      row.className = 'prog-file-row';
+      row.id = 'current-file-row';
+      row.innerHTML = `
+        <span class="prog-file-name active" id="current-file-name">Preparing...</span>
+        <span class="prog-file-status" id="current-file-status" style="color:var(--a2)">→ sending</span>`;
+      list.appendChild(row);
+      // Counter row
+      const counter = document.createElement('div');
+      counter.className = 'prog-file-row';
+      counter.style.fontFamily = 'var(--mono)';
+      counter.style.fontSize = '11px';
+      counter.style.color = 'var(--muted2)';
+      counter.id = 'file-counter';
+      counter.textContent = `0 / ${count.toLocaleString()} files`;
+      list.appendChild(counter);
+    }
+
+    function updateCurrentFileName(path) {
+      const el = document.getElementById('current-file-name');
+      const counter = document.getElementById('file-counter');
+      if (el) el.textContent = fileIcon(path.split('/').pop()) + ' ' + path;
+    }
+
+    function markFileStatusById(id, state, path) {
+      const el = document.getElementById('current-file-name');
+      if (el && path) el.textContent = '✓ ' + path;
+    }
+
     function updateSendProg(sent, total, fileIdx, fileSent, fileTotal) {
       const pct = Math.min(100, Math.round(sent / total * 100));
       document.getElementById('send-fill').style.width = pct + '%';
       document.getElementById('send-pct').textContent = pct + '%';
       document.getElementById('send-sent').textContent = fmtBytes(sent) + ' sent';
-      document.getElementById('send-prog-name').textContent =
-        selectedFiles[fileIdx]?.path || 'Transferring...';
+
+      // Update file counter for lazy mode
+      const counter = document.getElementById('file-counter');
+      if (counter) {
+        const total2 = selectedFiles.isLazy ? selectedFiles.count : selectedFiles.length;
+        counter.textContent = `${(fileIdx + 1).toLocaleString()} / ${total2.toLocaleString()} files`;
+      }
 
       const now = Date.now(), elapsed = (now - speedLast) / 1000;
       if (elapsed >= 0.5) {
@@ -1372,7 +1470,7 @@
       document.getElementById('send-speed').textContent = avg;
       document.getElementById('send-done').classList.add('show');
       document.getElementById('send-done-sub').textContent =
-        `${fmtBytes(total)} · ${selectedFiles.length} file${selectedFiles.length > 1 ? 's' : ''} · ${secs}s · avg ${avg}`;
+        `${fmtBytes(total)} · ${(selectedFiles.isLazy ? selectedFiles.count : selectedFiles.length).toLocaleString()} files · ${secs}s · avg ${avg}`;
       setSendStatus('Transfer complete!', 'ok');
       document.getElementById('send-btn').textContent = 'Done ✓';
     }
