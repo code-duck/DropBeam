@@ -1242,7 +1242,8 @@
     //  SENDER — init
     // ══════════════════════════════════════════════
     async function initSender() {
-      if (!selectedFiles.length) return;
+      const sfLen = selectedFiles.isLazy ? selectedFiles.count : (selectedFiles.length || 0);
+      if (!sfLen) return;
       document.getElementById('send-btn').disabled = true;
       document.getElementById('send-btn').innerHTML = '<span class="spin"></span>Generating key...';
       setSendStatus('Generating AES-256 key...', 'info');
