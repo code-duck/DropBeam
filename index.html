@@ -709,6 +709,52 @@
       flex-shrink: 0;
     }
 
+    /* ── collapsible file list (receiver) ── */
+    .recv-current-file {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 0 4px;
+      font-size: 12px;
+      font-family: var(--mono);
+      color: var(--a2);
+      border-top: 1px solid var(--border);
+      margin-top: 10px;
+    }
+    .recv-current-file-arrow {
+      flex-shrink: 0;
+    }
+    .recv-current-file-name {
+      flex: 1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .file-list-toggle {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 6px 0 4px;
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--muted2);
+      cursor: pointer;
+      user-select: none;
+      border-top: 1px solid var(--border);
+      margin-top: 4px;
+      transition: color .15s;
+    }
+    .file-list-toggle:hover { color: var(--text); }
+    .file-list-collapsible {
+      overflow: hidden;
+      max-height: 0;
+      transition: max-height 0.3s ease;
+    }
+    .file-list-collapsible.open {
+      max-height: 400px;
+      overflow-y: auto;
+    }
+
     /* ── STATUS ── */
     .status {
       margin-top: 14px;
@@ -985,6 +1031,7 @@
         <div class="done-emoji">✅</div>
         <div class="done-title">Transfer Complete!</div>
         <div class="done-sub" id="send-done-sub"></div>
+        <button class="btn btn-main" onclick="resetSender()" style="max-width:220px;margin:16px auto 0;">↺ Send Another</button>
       </div>
     </div>
 
@@ -1011,7 +1058,19 @@
             <span class="prog-pct" id="recv-pct">0%</span>
             <span id="recv-total-bytes">0 B</span>
           </div>
-          <div class="prog-files" id="recv-file-list"></div>
+          <div class="prog-files" id="recv-file-list">
+            <!-- current file indicator (always visible) -->
+            <div class="recv-current-file" id="recv-current-row" style="display:none">
+              <span class="recv-current-file-arrow">→</span>
+              <span class="recv-current-file-name" id="recv-current-name">—</span>
+            </div>
+            <!-- toggle header -->
+            <div class="file-list-toggle" id="recv-toggle" onclick="toggleRecvList()" style="display:none">
+              <span id="recv-toggle-label">▶ Files (0 total)</span>
+            </div>
+            <!-- collapsible completed list -->
+            <div class="file-list-collapsible" id="recv-done-list"></div>
+          </div>
         </div>
       </div>
 
@@ -1524,6 +1583,26 @@
       document.getElementById('send-btn').textContent = 'Done ✓';
     }
 
+    function resetSender() {
+      selectedFiles = [];
+      if (peer) { peer.destroy(); peer = null; }
+      conn = null;
+      document.getElementById('send-done').classList.remove('show');
+      document.getElementById('send-prog').classList.remove('show');
+      document.getElementById('share-box').classList.remove('show');
+      document.getElementById('selected-info').classList.remove('show');
+      document.getElementById('send-btn').disabled = true;
+      document.getElementById('send-btn').textContent = 'Generate Share Link';
+      document.getElementById('send-file-list').innerHTML = '';
+      document.getElementById('send-fill').style.width = '0%';
+      document.getElementById('send-pct').textContent = '0%';
+      document.getElementById('send-speed').textContent = '0 B/s';
+      document.getElementById('qrcode').innerHTML = '';
+      document.getElementById('share-link').value = '';
+      setSendStatus('', '');
+      setMode('file');
+    }
+
     // ══════════════════════════════════════════════
     //  RECEIVER — init
     // ══════════════════════════════════════════════
@@ -1624,9 +1703,23 @@
     function showRecvProg(meta) {
       document.getElementById('recv-prog').classList.add('show');
       document.getElementById('recv-total-bytes').textContent = fmtBytes(meta.totalBytes);
-      const list = document.getElementById('recv-file-list');
-      list.innerHTML = '';
-      // We'll add rows dynamically as files arrive
+      // Reset inner state
+      document.getElementById('recv-done-list').innerHTML = '';
+      document.getElementById('recv-current-row').style.display = 'none';
+      const toggle = document.getElementById('recv-toggle');
+      toggle.style.display = 'none';
+      document.getElementById('recv-toggle-label').textContent =
+        `\u25b6 Files (${meta.totalFiles} total)`;
+      document.getElementById('recv-done-list').classList.remove('open');
+    }
+
+    function toggleRecvList() {
+      const list = document.getElementById('recv-done-list');
+      const label = document.getElementById('recv-toggle-label');
+      const isOpen = list.classList.toggle('open');
+      const count = document.getElementById('recv-done-list').children.length;
+      const total = recvMeta ? recvMeta.totalFiles : 0;
+      label.textContent = (isOpen ? '\u25bc' : '\u25b6') + ` Files (${total} total)`;
     }
 
     function updateRecvProg(got, total) {
@@ -1644,25 +1737,34 @@
     }
 
     function markRecvFile(i, state) {
-      const list = document.getElementById('recv-file-list');
-      let row = document.getElementById('rfr-' + i);
-      if (!row) {
-        row = document.createElement('div');
+      const f = recvFiles[i];
+      const name = f?.path || f?.name || '';
+      const icon = fileIcon(f?.name || '');
+
+      if (state === 'active') {
+        // Show in the always-visible current file row
+        const row = document.getElementById('recv-current-row');
+        const nameEl = document.getElementById('recv-current-name');
+        row.style.display = 'flex';
+        nameEl.textContent = icon + ' ' + name;
+        // Show the toggle header too (now there's something to see)
+        const toggle = document.getElementById('recv-toggle');
+        toggle.style.display = 'flex';
+      } else if (state === 'done') {
+        // Move to the collapsible completed list
+        const doneList = document.getElementById('recv-done-list');
+        const row = document.createElement('div');
         row.className = 'prog-file-row';
         row.id = 'rfr-' + i;
         row.innerHTML = `
-      <span class="prog-file-name ${state}" id="rfn-${i}">
-        ${fileIcon(recvFiles[i]?.name || '')} ${recvFiles[i]?.path || ''}
-      </span>
-      <span class="prog-file-status" id="rfs-${i}"></span>`;
-        list.appendChild(row);
-      }
-      const nameEl = document.getElementById('rfn-' + i);
-      const statEl = document.getElementById('rfs-' + i);
-      if (nameEl) nameEl.className = 'prog-file-name ' + state;
-      if (statEl) {
-        if (state === 'done') { statEl.textContent = '✓'; statEl.style.color = 'var(--a1)'; }
-        if (state === 'active') { statEl.textContent = '↓'; statEl.style.color = 'var(--a2)'; }
+          <span class="prog-file-name done" style="color:var(--a1)">${icon} ${name}</span>
+          <span class="prog-file-status" style="color:var(--a1)">\u2713</span>`;
+        doneList.appendChild(row);
+        // Update toggle label count
+        const total = recvMeta ? recvMeta.totalFiles : 0;
+        const isOpen = doneList.classList.contains('open');
+        document.getElementById('recv-toggle-label').textContent =
+          (isOpen ? '\u25bc' : '\u25b6') + ` Files (${total} total)`;
       }
     }
 
