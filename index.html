@@ -441,18 +441,19 @@
       flex-shrink: 0;
     }
     .sel-item-remove {
+      color: #ff4455;
+      font-size: 16px;
+      font-weight: bold;
       background: none;
       border: none;
-      color: var(--muted);
       cursor: pointer;
-      font-size: 14px;
-      padding: 0 4px;
+      padding: 0 8px 0 0;
       flex-shrink: 0;
       line-height: 1;
       transition: color 0.15s;
     }
     .sel-item-remove:hover {
-      color: var(--danger);
+      color: #ff0000;
     }
 
     .sel-total {
@@ -1176,6 +1177,19 @@
       showSelectedLazy(count, totalSize, rawFiles[0]);
     }
 
+    function clearFiles() {
+      selectedFiles = [];
+      document.getElementById('selected-info').classList.remove('show');
+      document.getElementById('send-btn').disabled = true;
+      document.getElementById('sel-list').innerHTML = '';
+      setSendStatus('', '');
+    }
+
+    function removeFile(index) {
+      selectedFiles.splice(index, 1);
+      showSelected();
+    }
+
     function showSelected() {
       if (!selectedFiles.length) {
         clearFiles();
@@ -1196,10 +1210,10 @@
         const row = document.createElement('div');
         row.className = 'sel-item';
         row.innerHTML = `
+          <button class="sel-item-remove" onclick="removeFile(${i})" title="Remove">−</button>
           <span class="sel-item-icon">${fileIcon(file.name)}</span>
           <span class="sel-item-name">${path}</span>
-          <span class="sel-item-size">${fmtBytes(file.size)}</span>
-          <button class="sel-item-remove" onclick="removeFile(${i})" title="Remove">−</button>`;
+          <span class="sel-item-size">${fmtBytes(file.size)}</span>`;
         list.appendChild(row);
       });
       if (selectedFiles.length > 100) {
