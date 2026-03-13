@@ -5,7 +5,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>DropBeam — P2P File & Folder Share</title>
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>" />
+  <link rel="icon"
+    href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>" />
   <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -441,6 +442,7 @@
       color: var(--muted2);
       flex-shrink: 0;
     }
+
     .sel-item-remove {
       color: #ff4455;
       font-size: 16px;
@@ -453,6 +455,7 @@
       line-height: 1;
       transition: color 0.15s;
     }
+
     .sel-item-remove:hover {
       color: #ff0000;
     }
@@ -618,6 +621,7 @@
       margin-top: 10px;
       font-family: var(--sans);
     }
+
     .btn-danger:hover {
       background: #ff4455;
       color: white;
@@ -741,15 +745,18 @@
       border-top: 1px solid var(--border);
       margin-top: 10px;
     }
+
     .recv-current-file-arrow {
       flex-shrink: 0;
     }
+
     .recv-current-file-name {
       flex: 1;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
     }
+
     .file-list-toggle {
       display: flex;
       align-items: center;
@@ -764,12 +771,17 @@
       margin-top: 4px;
       transition: color .15s;
     }
-    .file-list-toggle:hover { color: var(--text); }
+
+    .file-list-toggle:hover {
+      color: var(--text);
+    }
+
     .file-list-collapsible {
       overflow: hidden;
       max-height: 0;
       transition: max-height 0.3s ease;
     }
+
     .file-list-collapsible.open {
       max-height: 400px;
       overflow-y: auto;
@@ -941,8 +953,11 @@
     <!-- HEADER -->
     <header>
       <div style="display:flex; align-items:center; gap:10px;">
-        <div style="width:36px; height:36px; background:linear-gradient(135deg,#0df2c4,#0aafff); border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:20px; flex-shrink:0;">⚡</div>
-        <span style="font-family:'Outfit',sans-serif; font-weight:800; font-size:20px;">Drop <span style="color:#0df2c4;">Beam</span></span>
+        <div
+          style="width:36px; height:36px; background:linear-gradient(135deg,#0df2c4,#0aafff); border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:20px; flex-shrink:0;">
+          ⚡</div>
+        <span style="font-family:'Outfit',sans-serif; font-weight:800; font-size:20px;">Drop <span
+            style="color:#0df2c4;">Beam</span></span>
       </div>
       <div class="header-right">
         <div id="net-badge"><span class="dot"></span><span id="net-text">Ready</span></div>
@@ -994,7 +1009,9 @@
         <div class="sel-header">
           <span class="sel-title" id="sel-title">Selected</span>
           <span class="sel-count" id="sel-count"></span>
-          <button onclick="clearFiles()" style="margin-left:auto;background:none;border:1px solid var(--danger);color:var(--danger);border-radius:6px;padding:2px 10px;cursor:pointer;font-size:12px;">✕ Clear</button>
+          <button onclick="clearFiles()"
+            style="margin-left:auto;background:none;border:1px solid var(--danger);color:var(--danger);border-radius:6px;padding:2px 10px;cursor:pointer;font-size:12px;">✕
+            Clear</button>
         </div>
         <div class="sel-list" id="sel-list"></div>
         <div class="sel-total">
@@ -1054,7 +1071,8 @@
         <div class="done-emoji">✅</div>
         <div class="done-title">Transfer Complete!</div>
         <div class="done-sub" id="send-done-sub"></div>
-        <button class="btn btn-main" onclick="resetSender()" style="max-width:220px;margin:16px auto 0;">↺ Send Another</button>
+        <button class="btn btn-main" onclick="resetSender()" style="max-width:220px;margin:16px auto 0;">↺ Send
+          Another</button>
       </div>
     </div>
 
@@ -1390,10 +1408,10 @@
           iceServers: [
             { urls: 'stun:stun.relay.metered.ca:80' },
             { urls: 'stun:stun.l.google.com:19302' },
-            { urls: 'turn:global.relay.metered.ca:80', username: '0aa80ea48d7847542677c2bd', credential: 'drW58I1kIz2tgIXi' },
-            { urls: 'turn:global.relay.metered.ca:80?transport=tcp', username: '0aa80ea48d7847542677c2bd', credential: 'drW58I1kIz2tgIXi' },
-            { urls: 'turn:global.relay.metered.ca:443', username: '0aa80ea48d7847542677c2bd', credential: 'drW58I1kIz2tgIXi' },
-            { urls: 'turns:global.relay.metered.ca:443?transport=tcp', username: '0aa80ea48d7847542677c2bd', credential: 'drW58I1kIz2tgIXi' }
+            { urls: 'turn:global.relay.metered.ca:80', username: '5d8f3f552a04e149db261841', credential: 'kEHF7aiIN2PKtj0w' },
+            { urls: 'turn:global.relay.metered.ca:80?transport=tcp', username: '5d8f3f552a04e149db261841', credential: 'kEHF7aiIN2PKtj0w' },
+            { urls: 'turn:global.relay.metered.ca:443', username: '5d8f3f552a04e149db261841', credential: 'kEHF7aiIN2PKtj0w' },
+            { urls: 'turns:global.relay.metered.ca:443?transport=tcp', username: '5d8f3f552a04e149db261841', credential: 'kEHF7aiIN2PKtj0w' }
           ]
         }
       });
@@ -1675,10 +1693,10 @@
           iceServers: [
             { urls: 'stun:stun.relay.metered.ca:80' },
             { urls: 'stun:stun.l.google.com:19302' },
-            { urls: 'turn:global.relay.metered.ca:80', username: '0aa80ea48d7847542677c2bd', credential: 'drW58I1kIz2tgIXi' },
-            { urls: 'turn:global.relay.metered.ca:80?transport=tcp', username: '0aa80ea48d7847542677c2bd', credential: 'drW58I1kIz2tgIXi' },
-            { urls: 'turn:global.relay.metered.ca:443', username: '0aa80ea48d7847542677c2bd', credential: 'drW58I1kIz2tgIXi' },
-            { urls: 'turns:global.relay.metered.ca:443?transport=tcp', username: '0aa80ea48d7847542677c2bd', credential: 'drW58I1kIz2tgIXi' }
+            { urls: 'turn:global.relay.metered.ca:80', username: '5d8f3f552a04e149db261841', credential: 'kEHF7aiIN2PKtj0w' },
+            { urls: 'turn:global.relay.metered.ca:80?transport=tcp', username: '5d8f3f552a04e149db261841', credential: 'kEHF7aiIN2PKtj0w' },
+            { urls: 'turn:global.relay.metered.ca:443', username: '5d8f3f552a04e149db261841', credential: 'kEHF7aiIN2PKtj0w' },
+            { urls: 'turns:global.relay.metered.ca:443?transport=tcp', username: '5d8f3f552a04e149db261841', credential: 'kEHF7aiIN2PKtj0w' }
           ]
         }
       });
