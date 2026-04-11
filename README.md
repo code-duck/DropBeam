@@ -1,92 +1,97 @@
-# DropBeam - Full-stack Node.js P2P File Sharing
+<div align="center">
+  <h1>⚡ DropBeam</h1>
+  <p><strong>A Modern P2P File & Folder Sharing Application</strong></p>
+</div>
 
-DropBeam is a P2P encrypted file sharing application. This project converts the original single HTML file into a proper full-stack Node.js project. It separates the static frontend from the custom PeerJS backend for flexible deployment (e.g., hosting the frontend on Vercel while running the PeerJS signaling server via a Cloudflare tunnel or elsewhere).
+DropBeam is a high-performance, real-time peer-to-peer (P2P) file sharing application built with WebRTC, Node.js, and PeerJS. It features a stunning modern interface, drag-and-drop functionality, and end-to-end encryption by default for secure and instantaneous file transfers across devices.
 
-## Prerequisites
-- Node.js installed
+## 🌟 Key Features
 
-## Installation
+- **Peer-to-Peer Transfers:** Files are shared directly between devices using WebRTC. No transfer data is stored on any central server.
+- **File & Folder Support:** Share entire directories or individual files effortlessly.
+- **End-to-End Encryption:** Leveraging WebRTC's built-in DTLS/SRTP encryption, all transfers are completely secure.
+- **Sleek UI/UX:** A beautiful dark-themed interface with drag & drop support, real-time progress bars, connection badges, and transfer speed indicators.
+- **QR Code Sharing:** Generate instant QR codes for quick recipient link sharing involving mobile devices.
+- **Decoupled Architecture:** Full-stack Node.js application separating the static frontend from the custom PeerJS signaling server, allowing for flexible deployments.
 
-1. Copy your existing `index.html` file into the root of this project (next to `package.json` and `server.js`).
-2. Install the necessary dependencies:
+## 🛠️ Tech Stack
+
+- **Frontend:** HTML5, Vanilla JavaScript, CSS3
+- **Signaling Server:** Node.js, Express, PeerJS
+- **P2P Technology:** WebRTC (PeerJS)
+- **Utilities:** JSZip (folder packaging), QRCode.js
+
+## 🚀 Getting Started
+
+### Prerequisites
+- [Node.js](https://nodejs.org/) installed on your machine.
+- NPM (Node Package Manager).
+
+### Installation
+
+1. Clone or download this repository.
+2. Install the necessary Node.js dependencies:
 
 ```bash
 npm install
 ```
 
-## Running Locally
+### Running Locally
 
-The `package.json` includes several scripts for your convenience:
+The `package.json` includes convenient scripts for local development:
 
-- **Run everything locally (Development):**
+- **Run Full App (Development):**
   ```bash
   npm run dev
   ```
-  This will start the PeerJS server on `http://localhost:9000` and the static frontend on `http://localhost:3000`.
+  Starts both the PeerJS signaling server (`http://localhost:9000`) and the static frontend (`http://localhost:3000`).
 
-- **Start only the PeerJS Backend:**
+- **Start Only Backend (PeerJS Server):**
   ```bash
   npm run peer
   ```
-  This will start the signaling server on `http://localhost:9000`.
 
-- **Start only the Frontend:**
+- **Start Only Frontend:**
   ```bash
   npm run serve
   ```
-  This will serve the `index.html` on `http://localhost:3000`.
 
-- **Production Start (PeerJS Server only):**
-  ```bash
-  npm start
-  ```
-  This command is useful when running the PeerJS backend in a production environment (like Railway, Render, etc.) where the static frontend is deployed somewhere else.
+## 🌍 Connecting Over the Internet
 
-## Updating the Cloudflare URL
+For DropBeam to facilitate transfers across different network environments, the frontend clients need to connect to the backend signaling server hosted online. 
 
-Currently, your `index.html` uses a hardcoded Cloudflare URL (`developments-entrance-spread-belts.trycloudflare.com`). When you run a new Cloudflare tunnel (see below), you'll get a new URL.
+### 1. Cloudflare Tunnel (Development/Testing via internet)
 
-Find the `Peer()` initialization code block in your `index.html` and update it like this:
+To easily expose your local PeerJS server to the internet without configuring port forwarding:
 
-```javascript
-const peer = new Peer({
-    host: 'YOUR-NEW-CLOUDFLARE-TUNNEL-URL.trycloudflare.com', // E.g., dropshare-xyz.trycloudflare.com
-    port: 443,
-    path: '/',
-    secure: true
-});
-```
+1. Install `cloudflared` on your system.
+2. Start your backend server (`npm run peer`).
+3. Run a tunnel pointing to port 9000:
+   ```bash
+   cloudflared tunnel --url localhost:9000
+   ```
+4. Copy the generated `.trycloudflare.com` domain.
+5. In your `index.html`, locate the `Peer()` initialization and update it:
+   ```javascript
+   const peer = new Peer({
+       host: 'YOUR-NEW-TUNNEL-URL.trycloudflare.com', 
+       port: 443,
+       path: '/',
+       secure: true
+   });
+   ```
 
-*Note: The `port` must be `443` and `secure` must be `true` when using Cloudflare tunnels.*
+### 2. Production Deployment
 
-## Starting a Cloudflare Tunnel
+**Frontend Deployment (e.g., Vercel):**
+- Import the Git repository in your Vercel Dashboard.
+- Leave settings as default (Framework preset to "Other").
+- Vercel will host `index.html` seamlessly as static content.
 
-To make your local PeerJS server accessible on the internet for the Vercel-hosted frontend to connect to, you can use a Cloudflare tunnel.
+**Backend Deployment (e.g., Railway, Render, VPS):**
+- Deploy the codebase using `npm start` as your start command.
+- Update the `host` and `secure` configurations in the frontend's `index.html` to point to your new deployed backend domain before deploying the frontend.
 
-1. Install `cloudflared` on your machine.
-2. In a terminal, run the following command (assuming your `npm run peer` server is running on port 9000):
+## 📜 License
 
-```bash
-cloudflared tunnel --url localhost:9000
-```
-
-3. Look at the terminal output for the temporary `.trycloudflare.com` URL provided.
-4. Copy only the domain name (without `https://`) and paste it into the `host` field of your `index.html` as shown above.
-
-## Deploying to Vercel
-
-Vercel is great for hosting the static `index.html` file for your frontend.
-
-1. **Option 1: Using the Vercel CLI**
-   - Install Vercel CLI globally: `npm i -g vercel`
-   - From the project root, run `vercel`
-   - Follow the prompts to set up and deploy (Say **no** when asked if you want to override the build command, as there is none. Just use defaults).
-   - Vercel will host `index.html` automatically.
-
-2. **Option 2: Using GitHub integration**
-   - Ensure your `index.html` is committed and pushed to GitHub.
-   - Go to the Vercel dashboard and Import the Git repository.
-   - The framework preset should be "Other" and the root directory should be where `index.html` is located.
-   - Click Deploy. Vercel will serve `index.html` statically.
-
-Anyone will then be able to open your `https://your-project.vercel.app` site and connect to your signaling server via the Cloudflare tunnel.
+This project is distributed under the terms of the ISC License. Please see the [LICENSE](LICENSE) file for more details.
